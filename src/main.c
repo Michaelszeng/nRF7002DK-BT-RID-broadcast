@@ -32,14 +32,12 @@
 #define NOTIFY_INTERVAL         1000
 
 static void start_advertising_coded(struct k_work *work);
-// static void notify_work_handler(struct k_work *work);
 
 static K_WORK_DEFINE(start_advertising_worker, start_advertising_coded);
-// static K_WORK_DELAYABLE_DEFINE(notify_work, notify_work_handler);
 
-static struct bt_le_ext_adv *adv;
+static struct bt_le_ext_adv *adv;  // create struct instance
 
-static const struct bt_data ad[] = {
+static const struct bt_data adv_data[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
 	BT_DATA_BYTES(BT_DATA_UUID16_ALL, BT_UUID_16_ENCODE(BT_UUID_HRS_VAL),
 					  BT_UUID_16_ENCODE(BT_UUID_BAS_VAL),
@@ -48,49 +46,7 @@ static const struct bt_data ad[] = {
 };
 
 
-static void connected(struct bt_conn *conn, uint8_t conn_err)
-{
-	int err;
-	struct bt_conn_info info;
-	char addr[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
-	if (conn_err) {
-		printk("Connection failed (err %d)\n", conn_err);
-		return;
-	}
-
-	err = bt_conn_get_info(conn, &info);
-	if (err) {
-		printk("Failed to get connection info (err %d)\n", err);
-	} else {
-		const struct bt_conn_le_phy_info *phy_info;
-		phy_info = info.le.phy;
-
-		printk("Connected: %s, tx_phy %u, rx_phy %u\n",
-		       addr, phy_info->tx_phy, phy_info->rx_phy);
-	}
-
-	dk_set_led_on(CON_STATUS_LED);
-}
-
-static void disconnected(struct bt_conn *conn, uint8_t reason)
-{
-	printk("Disconnected (reason 0x%02x)\n", reason);
-
-	k_work_submit(&start_advertising_worker);
-
-	dk_set_led_off(CON_STATUS_LED);
-}
-
-BT_CONN_CB_DEFINE(conn_callbacks) = {
-	.connected = connected,
-	.disconnected = disconnected,
-};
-
-static int create_advertising_coded(void)
-{
+static int create_advertising_coded(void) {
 	int err;
 	struct bt_le_adv_param param =
 		BT_LE_ADV_PARAM_INIT(BT_LE_ADV_OPT_CONNECTABLE |
@@ -100,7 +56,7 @@ static int create_advertising_coded(void)
 				     BT_GAP_ADV_FAST_INT_MAX_2,
 				     NULL);
 
-	err = bt_le_ext_adv_create(&param, NULL, &adv);
+	err = bt_le_ext_adv_create(&param, NULL, &adv);  // set parameters for adv
 	if (err) {
 		printk("Failed to create advertiser set (err %d)\n", err);
 		return err;
@@ -108,7 +64,7 @@ static int create_advertising_coded(void)
 
 	printk("Created adv: %p\n", adv);
 
-	err = bt_le_ext_adv_set_data(adv, ad, ARRAY_SIZE(ad), NULL, 0);
+	err = bt_le_ext_adv_set_data(adv, adv_data, ARRAY_SIZE(adv_data), NULL, 0);  // set data in adv
 	if (err) {
 		printk("Failed to set advertising data (err %d)\n", err);
 		return err;
@@ -117,8 +73,8 @@ static int create_advertising_coded(void)
 	return 0;
 }
 
-static void start_advertising_coded(struct k_work *work)
-{
+
+static void start_advertising_coded(struct k_work *work) {
 	int err;
 
 	err = bt_le_ext_adv_start(adv, NULL);
@@ -130,44 +86,8 @@ static void start_advertising_coded(struct k_work *work)
 	printk("Advertiser %p set started\n", adv);
 }
 
-// static void bas_notify(void)
-// {
-// 	uint8_t battery_level = bt_bas_get_battery_level();
 
-// 	__ASSERT_NO_MSG(battery_level > 0);
-
-// 	battery_level--;
-
-// 	if (!battery_level) {
-// 		battery_level = 100;
-// 	}
-
-// 	bt_bas_set_battery_level(battery_level);
-// }
-
-// static void hrs_notify(void)
-// {
-// 	static uint8_t heartrate = 100;
-
-// 	heartrate++;
-// 	if (heartrate == 160) {
-// 		heartrate = 100;
-// 	}
-
-// 	bt_hrs_notify(heartrate);
-// }
-
-// static void notify_work_handler(struct k_work *work)
-// {
-// 	/* Services data simulation. */
-// 	hrs_notify();
-// 	bas_notify();
-
-// 	k_work_reschedule(k_work_delayable_from_work(work), K_MSEC(NOTIFY_INTERVAL));
-// }
-
-void main(void)
-{
+void main(void) {
 	uint32_t led_status = 0;
 	int err;
 
