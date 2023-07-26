@@ -32,10 +32,10 @@
 #define NOTIFY_INTERVAL         1000
 
 static void start_advertising_coded(struct k_work *work);
-static void notify_work_handler(struct k_work *work);
+// static void notify_work_handler(struct k_work *work);
 
 static K_WORK_DEFINE(start_advertising_worker, start_advertising_coded);
-static K_WORK_DELAYABLE_DEFINE(notify_work, notify_work_handler);
+// static K_WORK_DELAYABLE_DEFINE(notify_work, notify_work_handler);
 
 static struct bt_le_ext_adv *adv;
 
@@ -130,41 +130,41 @@ static void start_advertising_coded(struct k_work *work)
 	printk("Advertiser %p set started\n", adv);
 }
 
-static void bas_notify(void)
-{
-	uint8_t battery_level = bt_bas_get_battery_level();
+// static void bas_notify(void)
+// {
+// 	uint8_t battery_level = bt_bas_get_battery_level();
 
-	__ASSERT_NO_MSG(battery_level > 0);
+// 	__ASSERT_NO_MSG(battery_level > 0);
 
-	battery_level--;
+// 	battery_level--;
 
-	if (!battery_level) {
-		battery_level = 100;
-	}
+// 	if (!battery_level) {
+// 		battery_level = 100;
+// 	}
 
-	bt_bas_set_battery_level(battery_level);
-}
+// 	bt_bas_set_battery_level(battery_level);
+// }
 
-static void hrs_notify(void)
-{
-	static uint8_t heartrate = 100;
+// static void hrs_notify(void)
+// {
+// 	static uint8_t heartrate = 100;
 
-	heartrate++;
-	if (heartrate == 160) {
-		heartrate = 100;
-	}
+// 	heartrate++;
+// 	if (heartrate == 160) {
+// 		heartrate = 100;
+// 	}
 
-	bt_hrs_notify(heartrate);
-}
+// 	bt_hrs_notify(heartrate);
+// }
 
-static void notify_work_handler(struct k_work *work)
-{
-	/* Services data simulation. */
-	hrs_notify();
-	bas_notify();
+// static void notify_work_handler(struct k_work *work)
+// {
+// 	/* Services data simulation. */
+// 	hrs_notify();
+// 	bas_notify();
 
-	k_work_reschedule(k_work_delayable_from_work(work), K_MSEC(NOTIFY_INTERVAL));
-}
+// 	k_work_reschedule(k_work_delayable_from_work(work), K_MSEC(NOTIFY_INTERVAL));
+// }
 
 void main(void)
 {
@@ -194,7 +194,7 @@ void main(void)
 	}
 
 	k_work_submit(&start_advertising_worker);
-	k_work_schedule(&notify_work, K_NO_WAIT);
+	// k_work_schedule(&notify_work, K_NO_WAIT);
 
 	for (;;) {
 		dk_set_led(RUN_STATUS_LED, (++led_status) % 2);
