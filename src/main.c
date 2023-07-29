@@ -4,9 +4,7 @@
  * SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
  */
 
-/** @file
- *  @brief Peripheral Heart Rate over LE Coded PHY sample
- */
+
 #include <stddef.h>
 #include <string.h>
 #include <errno.h>
@@ -37,24 +35,33 @@ static K_WORK_DEFINE(start_advertising_worker, start_advertising_coded);
 
 static struct bt_le_ext_adv *adv;  // create struct instance
 
-static const struct bt_data adv_data[] = {
-	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
-	BT_DATA_BYTES(BT_DATA_UUID16_ALL, BT_UUID_16_ENCODE(BT_UUID_HRS_VAL),
-					  BT_UUID_16_ENCODE(BT_UUID_BAS_VAL),
-					  BT_UUID_16_ENCODE(BT_UUID_DIS_VAL)),
-	BT_DATA(BT_DATA_NAME_COMPLETE, DEVICE_NAME, DEVICE_NAME_LEN)
-};
-
 
 static int create_advertising_coded(void) {
 	int err;
-	struct bt_le_adv_param param =
-		BT_LE_ADV_PARAM_INIT(BT_LE_ADV_OPT_CONNECTABLE |
-				     BT_LE_ADV_OPT_EXT_ADV |
-				     BT_LE_ADV_OPT_CODED,
-				     BT_GAP_ADV_FAST_INT_MIN_2,
-				     BT_GAP_ADV_FAST_INT_MAX_2,
-				     NULL);
+
+
+	//                                         ctr   type  SN
+	uint8_t manufDataBuff[]={0xFA, 0xFF, 0x0D, 0x77, 0x02, 0x10, 0x31, 0x35,
+                             0x39, 0x36, 0x46, 0x33, 0x35, 0x30, 0x34, 0x35,
+                             0x37, 0x37, 0x39, 0x31, 0x31, 0x35, 0x31, 0x35,
+							 0x32, 0x33, 0x00, 0x00, 0x00};
+    // memcpy(manufDataBuff+4, odid_basic_data.UASID, sizeof(manufDataBuff)-4);
+    struct bt_data dt_bt_conn_ad[] = {
+        {
+            .type = 0x16,  // Service Data
+            .data_len = sizeof(manufDataBuff),  // 30 bytes
+            .data = manufDataBuff,
+        }
+    };
+
+	// both primary and extended packets should be LE Coded PHY
+	// advertise at 1 second interval
+	struct bt_le_adv_param param = BT_LE_ADV_PARAM_INIT(BT_LE_ADV_OPT_NONE |
+				    									BT_LE_ADV_OPT_EXT_ADV |
+				    									BT_LE_ADV_OPT_CODED,
+														1000,
+														1000,
+														NULL);
 
 	err = bt_le_ext_adv_create(&param, NULL, &adv);  // set parameters for adv
 	if (err) {
@@ -64,7 +71,7 @@ static int create_advertising_coded(void) {
 
 	printk("Created adv: %p\n", adv);
 
-	err = bt_le_ext_adv_set_data(adv, adv_data, ARRAY_SIZE(adv_data), NULL, 0);  // set data in adv
+	err = bt_le_ext_adv_set_data(adv, dt_bt_conn_ad, ARRAY_SIZE(dt_bt_conn_ad), NULL, 0);  // set data in adv
 	if (err) {
 		printk("Failed to set advertising data (err %d)\n", err);
 		return err;
