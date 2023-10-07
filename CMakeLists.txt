@@ -11,5 +11,6 @@ project(peripheral_hr)
 # NORDIC SDK APP START
 target_sources(app PRIVATE
   src/main.c
+  src/opendroneid.c
 )
 # NORDIC SDK APP END
